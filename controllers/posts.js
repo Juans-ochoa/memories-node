@@ -32,12 +32,34 @@ export const updatePost = async (req, res) => {
   }
 
   try {
-    const updatedPost = await PostMessage.findByIdAnUpdate(
+    const updatedPost = await PostMessage.findByIdAndUpdate(
       _id,
       { ...post },
       { new: true }
     );
-    console.log(updatedPost);
+
+    res.status(201).json(updatedPost);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const likePost = async (req, res) => {
+  const { id: _id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    return res.status(404).send("Not post with that id");
+  }
+
+  try {
+    const post = await PostMessage.findById(_id);
+    const updatePost = await PostMessage.findByIdAndUpdate(
+      _id,
+      { likeCount: post.likeCount + 1 },
+      { new: true }
+    );
+
+    res.json(updatePost);
   } catch (error) {
     console.log(error);
   }
@@ -51,8 +73,9 @@ export const deletePost = async (req, res) => {
   }
 
   try {
-    await PostMessage.findByIdAndRemove(_id);
-    res.status(201);
+    await PostMessage.findByIdAndDelete(_id);
+
+    res.json({ message: "Post deleted!" });
   } catch (error) {
     console.log(error);
   }
