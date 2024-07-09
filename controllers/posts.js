@@ -1,82 +1,98 @@
 import mongoose from "mongoose";
 import PostMessage from "../models/postsMessage.js";
+import { validatePartialPost, validatePost } from "../schemas/post.js";
 
-export const getPosts = async (req, res) => {
-  try {
-    const postsMessages = await PostMessage.find();
-    res.status(200).send(postsMessages);
-  } catch (error) {
-    res.status(404).json({ message: error.message });
-  }
-};
-
-export const createPost = async (req, res) => {
-  const body = req.body;
-
-  const newPost = new PostMessage(body);
-  try {
-    await newPost.save();
-
-    res.status(201).json(newPost);
-  } catch (error) {}
-};
-
-export const updatePost = async (req, res) => {
-  const {
-    params: { id: _id },
-  } = req;
-  const post = req.body;
-
-  if (!mongoose.Types.ObjectId.isValid(_id)) {
-    return res.status(404).send("Not post with that id");
+class PostController {
+  static async getPosts(req, res) {
+    try {
+      const postsMessages = await PostMessage.find();
+      res.status(200).send(postsMessages);
+    } catch (error) {
+      res.status(404).json({ message: error.message });
+    }
   }
 
-  try {
-    const updatedPost = await PostMessage.findByIdAndUpdate(
-      _id,
-      { ...post },
-      { new: true }
-    );
+  static async createPost(req, res) {
+    const result = validatePost(req.body);
 
-    res.status(201).json(updatedPost);
-  } catch (error) {
-    console.log(error);
-  }
-};
+    if (!result.success) {
+      return res.status(400).json({ error: JSON.parse(result.error.message) });
+    }
 
-export const likePost = async (req, res) => {
-  const { id: _id } = req.params;
+    try {
+      const newPost = new PostMessage(result.data);
+      await newPost.save();
 
-  if (!mongoose.Types.ObjectId.isValid(_id)) {
-    return res.status(404).send("Not post with that id");
+      res.status(201).json(newPost);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  try {
-    const post = await PostMessage.findById(_id);
-    const updatePost = await PostMessage.findByIdAndUpdate(
-      _id,
-      { likeCount: post.likeCount + 1 },
-      { new: true }
-    );
+  static async updatePost(req, res) {
+    const result = validatePartialPost(req.body);
 
-    res.json(updatePost);
-  } catch (error) {
-    console.log(error);
+    if (result.error) {
+      return res.status(400).json(post.error.message);
+    }
+
+    const {
+      params: { id: _id },
+    } = req;
+
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(404).send("Not post with that id");
+    }
+
+    try {
+      const updatedPost = await PostMessage.findByIdAndUpdate(
+        _id,
+        { ...post },
+        { new: true }
+      );
+
+      res.status(201).json(updatedPost);
+    } catch (error) {
+      console.log(error);
+    }
   }
-};
 
-export const deletePost = async (req, res) => {
-  const { id: _id } = req.params;
+  static async likePost(req, res) {
+    const { id: _id } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(_id)) {
-    return res.status(404).send("Not post with that id");
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(404).send("Not post with that id");
+    }
+
+    try {
+      const post = await PostMessage.findById(_id);
+      const updatePost = await PostMessage.findByIdAndUpdate(
+        _id,
+        { likeCount: post.likeCount + 1 },
+        { new: true }
+      );
+
+      res.json(updatePost);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  try {
-    await PostMessage.findByIdAndDelete(_id);
+  static async deletePost(req, res) {
+    const { id: _id } = req.params;
 
-    res.json({ message: "Post deleted!" });
-  } catch (error) {
-    console.log(error);
+    if (!mongoose.Types.ObjectId.isValid(_id)) {
+      return res.status(404).send("Not post with that id");
+    }
+
+    try {
+      await PostMessage.findByIdAndDelete(_id);
+
+      res.json({ message: "Post deleted!" });
+    } catch (error) {
+      console.log(error);
+    }
   }
-};
+}
+
+export default PostController;
