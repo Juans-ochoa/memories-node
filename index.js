@@ -1,17 +1,24 @@
 import bodyParser from "body-parser";
-import cors from "cors";
+import cookiParser from "cookie-parser";
+
 import express from "express";
 import mongoose from "mongoose";
 
+import corsMiddleware from "./middleware/cors.js";
+import authRoutes from "./routes/auth.js";
 import postsRoutes from "./routes/posts.js";
 
 const app = express();
 
 app.use(bodyParser.json({ limit: "30mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
-app.use(cors());
+app.disable("x-powered-by");
+app.use(corsMiddleware());
+app.use(cookiParser());
 
-app.use("/posts", postsRoutes);
+app.use("/api/auth", authRoutes);
+
+app.use("/api/posts", postsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
