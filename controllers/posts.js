@@ -33,7 +33,7 @@ class PostController {
     const result = validatePartialPost(req.body);
 
     if (result.error) {
-      return res.status(400).json(post.error.message);
+      return res.status(400).json(result.error.message);
     }
 
     const {
@@ -47,7 +47,7 @@ class PostController {
     try {
       const updatedPost = await PostMessage.findByIdAndUpdate(
         _id,
-        { ...post },
+        { ...result.data },
         { new: true }
       );
 
